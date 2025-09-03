@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; }
+        #chat-container { width: 400px; margin: 50px auto; background: #fff; border-radius: 8px; box-shadow: 0 0 10px #ccc; }
+        #chat-window { height: 400px; overflow-y: auto; padding: 20px; border-bottom: 1px solid #eee; }
+        .message { margin: 10px 0; }
+        .user { text-align: right; color: #007bff; }
+        .ai { text-align: left; color: #333; }
+        #input-form { display: flex; }
+        #user-input { flex: 1; padding: 10px; border: none; border-radius: 0 0 0 8px; }
+        #send-btn { padding: 10px 20px; border: none; background: #007bff; color: #fff; border-radius: 0 0 8px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div id="chat-container">
+    <div id="chat-window"></div>
+    <form id="input-form">
+        <input type="text" id="user-input" autocomplete="off" placeholder="Type your message..." required />
+        <button type="submit" id="send-btn">Send</button>
+    </form>
+</div>
+<script>
+    const chatWindow = document.getElementById('chat-window');
+    const inputForm = document.getElementById('input-form');
+    const userInput = document.getElementById('user-input');
+
+    function appendMessage(text, sender) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + sender;
+
+        // Regex to detect URLs
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        // Check if the whole message is a single image URL
+        if (text.match(/^https?:\/\/[^\s]+\.(jpeg|jpg|gif|png)$/i)) {
+            msgDiv.innerHTML = `<img src="${text}" alt="image" style="max-width:100%;border-radius:4px;">`;
+        } else {
+            // Replace image URLs with <img>, others with <a>
+            let html = text.replace(urlRegex, function(url) {
+                if (url.match(/\.(jpeg|jpg|gif|png)$/i)) {
+                    return `<img src="${url}" alt="image" style="max-width:100%;border-radius:4px;">`;
+                } else {
+                    return `<a href="${url}" target="_blank">${url}</a>`;
+                }
+            });
+            msgDiv.innerHTML = html;
+        }
+        chatWindow.appendChild(msgDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    inputForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+        appendMessage(message, 'user');
+        userInput.value = '';
+        try {
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
+            const data = await response.json();
+            appendMessage(data.reply, 'ai');
+        } catch (err) {
+            appendMessage('Error: Could not reach AI service.', 'ai');
+        }
+    });
+</script>
+</body>
+</html>

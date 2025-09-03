@@ -1,0 +1,2 @@
+ALTER TABLE image
+ADD COLUMN content_type VARCHAR(255);
